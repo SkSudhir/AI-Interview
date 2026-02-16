@@ -22,17 +22,12 @@ COPY . .
 # Install OpenSSL in builder stage too
 RUN apt-get update -y && apt-get install -y openssl
 
-# Define build arguments with default dummy values
-ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-ARG NEXTAUTH_SECRET="dummy_secret_for_build"
-ARG NEXTAUTH_URL="http://localhost:3000"
-ARG OPENAI_API_KEY="dummy_key_for_build"
-
-# Persist them as environment variables for the build process
-ENV DATABASE_URL=$DATABASE_URL
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-ENV NEXTAUTH_URL=$NEXTAUTH_URL
-ENV OPENAI_API_KEY=$OPENAI_API_KEY
+# Create a .env file with dummy variables for build time
+# This ensures Prisma can find the variables even if shell env inheritance fails
+RUN echo "DATABASE_URL=\"postgresql://dummy:dummy@localhost:5432/dummy\"" > .env && \
+    echo "NEXTAUTH_SECRET=\"dummy_secret_for_build\"" >> .env && \
+    echo "NEXTAUTH_URL=\"http://localhost:3000\"" >> .env && \
+    echo "OPENAI_API_KEY=\"dummy_key_for_build\"" >> .env
 
 # Generate Prisma Client
 RUN npx prisma generate
