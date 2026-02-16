@@ -30,7 +30,7 @@ ENV NEXTAUTH_URL="http://localhost:3000"
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 
 # Generate Prisma Client
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 # Build Next.js app
 RUN npm run build
