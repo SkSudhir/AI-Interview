@@ -207,12 +207,8 @@ export default function EvaluationPage() {
                         </button>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-2">
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-6">
-                            <div className="mb-2 text-sm text-slate-400">AI-Calculated Average Score</div>
-                            <div className="mb-1 text-4xl font-bold text-white">{avgScore.toFixed(1)}</div>
-                            <div className="text-sm text-purple-400">Based on {evaluationData.questions.length} questions</div>
-                        </div>
+                    <div className="grid gap-6 md:grid-cols-1">
+
                         <div className="rounded-xl border border-white/10 bg-white/5 p-6">
                             <div className="mb-2 text-sm text-slate-400">Skills Assessed</div>
                             <div className="mb-1 text-4xl font-bold text-white">{new Set(evaluationData.questions.map(q => q.skill)).size}</div>
@@ -295,7 +291,7 @@ export default function EvaluationPage() {
                                                         <p className="text-lg font-medium text-white">{question.text}</p>
                                                     </div>
                                                     <div className="ml-4 text-right">
-                                                        <div className="mb-1 text-3xl font-bold text-white">{question.score}</div>
+
                                                         <div className={`text-sm font-medium ${config.textColor}`}>{config.label}</div>
                                                     </div>
                                                 </div>

@@ -107,8 +107,8 @@ export function SummarizationDashboard({
                     <button
                         onClick={() => setActiveTab('notes')}
                         className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'notes'
-                                ? 'border-blue-600 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         <div className="flex items-center gap-2">
@@ -119,8 +119,8 @@ export function SummarizationDashboard({
                     <button
                         onClick={() => setActiveTab('summary')}
                         className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'summary'
-                                ? 'border-blue-600 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         <div className="flex items-center gap-2">
@@ -131,8 +131,8 @@ export function SummarizationDashboard({
                     <button
                         onClick={() => setActiveTab('transcript')}
                         className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'transcript'
-                                ? 'border-blue-600 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         <div className="flex items-center gap-2">
@@ -170,10 +170,7 @@ export function SummarizationDashboard({
                                             </div>
                                             <p className="text-gray-900 font-medium">{evaluation.questionText}</p>
                                         </div>
-                                        <div className="ml-4 text-right">
-                                            <div className="text-3xl font-bold text-blue-600">{evaluation.overallScore}</div>
-                                            <div className="text-xs text-gray-500">/ 5</div>
-                                        </div>
+
                                     </div>
                                 </CardHeader>
 
