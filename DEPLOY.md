@@ -1,77 +1,49 @@
-# Deploying the AI Interview Platform
+# 🚂 Deploying to Railway (Flawless Setup)
 
-You have two main options for demoing the platform:
+Since you chose Railway, here is the exact checklist to ensure everything works perfectly on the first try.
 
-## Option 1: Quick Temporary Demo (Recommended for right now)
-This exposes your local machine to the internet. Best for a quick 10-minute demo.
+## 1. Prepare GitHub Repository
+Ensure your latest code is pushed to GitHub:
+```bash
+git add .
+git commit -m "Optimize for Railway deployment"
+git push origin main
+```
 
-### Using ngrok (Most reliable)
-1.  **Install ngrok**: If not installed, download from [ngrok.com](https://ngrok.com).
-2.  **Start your app locally**:
-    ```bash
-    npm run dev:server
-    ```
-3.  **In a separate terminal**:
-    ```bash
-    ngrok http 3000
-    ```
-4.  Copy the `https://....ngrok-free.app` URL and share it.
+## 2. Create Railway Project
+1.  Go to **[Railway.app](https://railway.app)**.
+2.  Click **New Project** → **Deploy from GitHub repo**.
+3.  Select your `ai-interview-platform` repository.
+4.  **Important**: Click **"Add a Database"** (Select PostgreSQL) when asked, or add it from the dashboard immediately after.
 
-### Using localtunnel (No signup required)
-1.  **Start your app locally**:
-    ```bash
-    npm run dev:server
-    ```
-2.  **In a separate terminal**:
-    ```bash
-    npx localtunnel --port 3000
-    ```
-3.  Copy the URL provided.
+## 3. Configure Environment Variables (Crucial!)
+Go to your project settings in Railway, click on the "Variables" tab, and add these EXACT variables:
 
----
+| Variable Name | Value / Instruction |
+|:--- |:--- |
+| `DATABASE_URL` | **Automatically set** by Railway if you added Postgres. (Verify it exists). |
+| `NEXTAUTH_SECRET` | Run `openssl rand -base64 32` in your terminal and paste the result. |
+| `OPENAI_API_KEY` | Your actual OpenAI API Key (`sk-...`). |
+| `NEXTAUTH_URL` | The **Public Domain** provided by Railway (e.g., `https://ai-interview-production.up.railway.app`). <br> *Note: You find this in Settings → Networking → Public Networking after deployment.* |
+| `APP_URL` | **Same as NEXTAUTH_URL**. (Used for WebSocket CORS). |
+| `NODE_ENV` | `production` (Usually default, but good to be explicit). |
 
-## Option 2: Permanent Cloud Deployment (Best for long-term)
-We recommend **Railway** because it supports the custom WebSocket server and Database out of the box.
+### ⚠️ Common Pitfall: The URL Loop
+The deployment might start *before* you have the public domain (NEXTAUTH_URL). 
+1.  Let the first build fail or finish.
+2.  Go to **Settings** → **Networking** → **Generate Domain**.
+3.  Copy that domain (e.g., `https://xxx.up.railway.app`).
+4.  Go to **Variables** and paste it into `NEXTAUTH_URL` and `APP_URL`.
+5.  **Redeploy** (Click the "Redeploy" button or push a commit).
 
-### Prerequisites
-- GitHub account
-- Railway account (free trial available)
+## 4. Verify Deployment
+Once active:
+-   **Database**: My update explicitly runs `prisma migrate deploy` on startup, so your tables will be created automatically!
+-   **WebSockets**: Test the interview room. If it connects, your `APP_URL` is correct.
 
-### Steps
-1.  **Push to GitHub**:
-    Create a repository and push this code.
-    ```bash
-    git init
-    git add .
-    git commit -m "Initial commit"
-    # Add your remote
-    git remote add origin <your-repo-url>
-    git push -u origin main
-    ```
+## 5. Troubleshooting
+-   **"Prisma Client not found"**: I fixed this in the Dockerfile by generating it during build.
+-   **"Connection Refused"**: Check if `DATABASE_URL` is correct.
+-   **"WebSocket Error"**: Ensure `APP_URL` matches the browser URL exactly (https vs http).
 
-2.  **Deploy on Railway**:
-    - Go to [Railway.app](https://railway.app)
-    - Click "New Project" -> "Deploy from GitHub repo"
-    - Select your repository.
-    - **Important**: Add a PostgreSQL Database service.
-    
-3.  **Configure Variables**:
-    In Railway, go to "Variables" and set:
-    - `DATABASE_URL`: (Railway provides this automatically if you added Postgres)
-    - `NEXTAUTH_SECRET`: Generate one (`openssl rand -base64 32`)
-    - `NEXTAUTH_URL`: Your Railway URL (e.g. `https://your-app.up.railway.app`)
-    - `OPENAI_API_KEY`: Your key
-    - `APP_URL`: Same as `NEXTAUTH_URL`
-
-4.  **Deployment**:
-    Railway will automatically detect the `Dockerfile` we created and build it.
-    
-    *Note: The build might take 3-5 minutes.*
-
-### Troubleshooting Railway
-- If the build fails on `prisma generate`, make sure `DATABASE_URL` is set during build (or add `ARG DATABASE_URL` in Dockerfile, but usually Railway handles this).
-- If WebSockets fail, ensure your client connects to the correct `APP_URL`.
-
-## Other Platforms
-- **Render**: Select "Web Service", choose "Docker", and it should work similarly.
-- **Fly.io**: Use `fly launch` and it acts similarly.
+You are ready for liftoff! 🚀
