@@ -22,20 +22,25 @@ COPY . .
 # Install OpenSSL in builder stage too
 RUN apt-get update -y && apt-get install -y openssl
 
-# Set dummy environment variables to pass build time validation
-# Real variables will be provided at runtime by Railway
-ENV OPENAI_API_KEY="dummy_key_for_build"
-ENV NEXTAUTH_SECRET="dummy_secret_for_build"
-ENV NEXTAUTH_URL="http://localhost:3000"
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+# Define build arguments with default dummy values
+ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ARG NEXTAUTH_SECRET="dummy_secret_for_build"
+ARG NEXTAUTH_URL="http://localhost:3000"
+ARG OPENAI_API_KEY="dummy_key_for_build"
+
+# Persist them as environment variables for the build process
+ENV DATABASE_URL=$DATABASE_URL
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
+ENV OPENAI_API_KEY=$OPENAI_API_KEY
 
 # Generate Prisma Client
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
+RUN npx prisma generate
 
 # Build Next.js app
 RUN npm run build
 
-# Build Custom Server (server.ts -> dist/server.js)
+# Build Custom Server
 RUN npm run build:server
 
 # Production image, copy all the files and run next
