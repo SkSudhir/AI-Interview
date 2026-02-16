@@ -5,11 +5,12 @@ import { validateGuide } from '@/lib/ai/services';
 // POST /api/guides/[id]/validate - Validate guide before publishing
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const guide = await prisma.interviewGuide.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 skills: {
                     include: {

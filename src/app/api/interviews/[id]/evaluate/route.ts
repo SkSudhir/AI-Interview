@@ -5,11 +5,12 @@ import { evaluateQuestion, generateInterviewSummary } from '@/lib/ai/services';
 // POST /api/interviews/[id]/evaluate - Generate AI evaluations for all questions
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const interview = await prisma.interview.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 guide: {
                     include: {
@@ -19,7 +20,7 @@ export async function POST(
                                     include: {
                                         transcripts: {
                                             where: {
-                                                interviewId: params.id,
+                                                interviewId: id,
                                             },
                                             orderBy: {
                                                 timestamp: 'asc',
@@ -66,12 +67,12 @@ export async function POST(
                 const evaluation = await prisma.questionEvaluation.upsert({
                     where: {
                         interviewId_questionId: {
-                            interviewId: params.id,
+                            interviewId: id,
                             questionId: question.id,
                         },
                     },
                     create: {
-                        interviewId: params.id,
+                        interviewId: id,
                         questionId: question.id,
                         skillId: skill.id,
                         traitEvaluation: aiEvaluation.traitEvaluation,
@@ -107,10 +108,10 @@ export async function POST(
         // Save summary
         const summary = await prisma.interviewSummary.upsert({
             where: {
-                interviewId: params.id,
+                interviewId: id,
             },
             create: {
-                interviewId: params.id,
+                interviewId: id,
                 strengths: aiSummary.strengths,
                 developmentAreas: aiSummary.developmentAreas,
                 competencySummary: aiSummary.competencySummary,

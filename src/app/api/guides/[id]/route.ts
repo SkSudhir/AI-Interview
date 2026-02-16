@@ -5,11 +5,12 @@ import { validateGuide } from '@/lib/ai/services';
 // GET /api/guides/[id] - Get specific guide
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const guide = await prisma.interviewGuide.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 createdBy: {
                     select: {
@@ -53,14 +54,15 @@ export async function GET(
 // PATCH /api/guides/[id] - Update guide
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const body = await request.json();
         const { title, jobFamily, role, level, jobDescription, status } = body;
 
         const guide = await prisma.interviewGuide.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 title,
                 jobFamily,
@@ -95,11 +97,12 @@ export async function PATCH(
 // DELETE /api/guides/[id] - Delete guide
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         await prisma.interviewGuide.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ success: true });

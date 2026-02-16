@@ -4,14 +4,15 @@ import { prisma } from '@/lib/prisma/client';
 // PATCH /api/questions/[id] - Update question
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const body = await request.json();
         const { text, traits, scoringGuide } = body;
 
         const question = await prisma.question.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 text,
                 traits,
@@ -22,7 +23,7 @@ export async function PATCH(
         if (scoringGuide && Array.isArray(scoringGuide)) {
             // Delete existing scoring guides
             await prisma.scoringGuide.deleteMany({
-                where: { questionId: params.id },
+                where: { questionId: id },
             });
 
             // Create new scoring guides
@@ -30,7 +31,7 @@ export async function PATCH(
                 scoringGuide.map((sg: any) =>
                     prisma.scoringGuide.create({
                         data: {
-                            questionId: params.id,
+                            questionId: id,
                             level: sg.level,
                             score: sg.score,
                             description: sg.description,
@@ -42,7 +43,7 @@ export async function PATCH(
 
         // Fetch complete question with scoring guides
         const completeQuestion = await prisma.question.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 scoringGuides: true,
             },
@@ -61,11 +62,12 @@ export async function PATCH(
 // DELETE /api/questions/[id] - Delete question
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         await prisma.question.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ success: true });

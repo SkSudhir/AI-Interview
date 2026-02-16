@@ -4,15 +4,16 @@ import { prisma } from '@/lib/prisma/client';
 // POST /api/interviews/[id]/consent - Log consent
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const body = await request.json();
         const { consentText, ipAddress, userAgent } = body;
 
         // Update interview consent status
         await prisma.interview.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 consentGiven: true,
                 consentGivenAt: new Date(),
@@ -22,7 +23,7 @@ export async function POST(
         // Log consent
         const consentLog = await prisma.consentLog.create({
             data: {
-                interviewId: params.id,
+                interviewId: id,
                 consentText,
                 ipAddress,
                 userAgent,

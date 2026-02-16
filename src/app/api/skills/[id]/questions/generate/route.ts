@@ -5,11 +5,12 @@ import { generateQuestions } from '@/lib/ai/services';
 // POST /api/skills/[id]/questions/generate - Generate questions for a skill
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const skill = await prisma.skill.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!skill) {

@@ -4,11 +4,12 @@ import { prisma } from '@/lib/prisma/client';
 // GET /api/interviews/[id] - Get specific interview
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const interview = await prisma.interview.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 guide: {
                     include: {
@@ -72,9 +73,10 @@ export async function GET(
 // PATCH /api/interviews/[id] - Update interview
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const body = await request.json();
         const { status, consentGiven } = body;
 
@@ -88,7 +90,7 @@ export async function PATCH(
         }
 
         const interview = await prisma.interview.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData,
         });
 
