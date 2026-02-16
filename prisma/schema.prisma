@@ -1,0 +1,279 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  RECRUITER
+  INTERVIEWER
+  CANDIDATE
+}
+
+enum InterviewStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum GuideStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum HiringRecommendation {
+  STRONG_HIRE
+  HIRE
+  LEAN_HIRE
+  LEAN_NO_HIRE
+  NO_HIRE
+}
+
+enum TraitEvaluation {
+  STRONG
+  MODERATE
+  WEAK
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          UserRole  @default(RECRUITER)
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // OAuth
+  accounts      Account[]
+  sessions      Session[]
+
+  // Relations
+  createdGuides       InterviewGuide[]      @relation("GuideCreator")
+  interviewsAsInterviewer InterviewParticipant[] @relation("Interviewer")
+  interviewsAsCandidate   InterviewParticipant[] @relation("Candidate")
+  createdInterviews   Interview[]           @relation("InterviewCreator")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model InterviewGuide {
+  id              String      @id @default(cuid())
+  title           String
+  jobFamily       String?
+  role            String?
+  level           String?
+  jobDescription  String?     @db.Text
+  status          GuideStatus @default(DRAFT)
+  createdById     String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  createdBy User   @relation("GuideCreator", fields: [createdById], references: [id])
+  skills    Skill[]
+  interviews Interview[]
+
+  @@map("interview_guides")
+}
+
+model Skill {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?  @db.Text
+  interviewGuideId  String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  interviewGuide InterviewGuide @relation(fields: [interviewGuideId], references: [id], onDelete: Cascade)
+  questions      Question[]
+  evaluations    QuestionEvaluation[]
+
+  @@map("skills")
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  skillId     String
+  text        String   @db.Text
+  traits      String[] // Array of traits assessed
+  order       Int      @default(0)
+  isCustom    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  skill         Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  scoringGuides ScoringGuide[]
+  evaluations   QuestionEvaluation[]
+  transcripts   Transcript[]
+
+  @@map("questions")
+}
+
+model ScoringGuide {
+  id          String @id @default(cuid())
+  questionId  String
+  level       String // "HIGH", "MEDIUM", "LOW"
+  score       Int    // 5, 3, 1
+  description String @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("scoring_guides")
+}
+
+model Interview {
+  id                String          @id @default(cuid())
+  guideId           String
+  candidateName     String
+  candidateEmail    String
+  scheduledAt       DateTime
+  status            InterviewStatus @default(SCHEDULED)
+  uniqueLink        String          @unique
+  consentRequired   Boolean         @default(true)
+  consentGiven      Boolean         @default(false)
+  consentGivenAt    DateTime?
+  createdById       String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  guide        InterviewGuide         @relation(fields: [guideId], references: [id])
+  createdBy    User                   @relation("InterviewCreator", fields: [createdById], references: [id])
+  participants InterviewParticipant[]
+  transcripts  Transcript[]
+  evaluations  QuestionEvaluation[]
+  summary      InterviewSummary?
+
+  @@map("interviews")
+}
+
+model InterviewParticipant {
+  id           String   @id @default(cuid())
+  interviewId  String
+  userId       String
+  role         String   // "INTERVIEWER" or "CANDIDATE"
+  joinedAt     DateTime?
+  leftAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewer User?   @relation("Interviewer", fields: [userId], references: [id], map: "interview_participants_interviewer_fkey")
+  candidate   User?   @relation("Candidate", fields: [userId], references: [id], map: "interview_participants_candidate_fkey")
+
+  @@map("interview_participants")
+}
+
+model Transcript {
+  id          String   @id @default(cuid())
+  interviewId String
+  questionId  String?
+  speaker     String   // "INTERVIEWER" or "CANDIDATE"
+  text        String   @db.Text
+  timestamp   DateTime @default(now())
+  startTime   Int?     // Milliseconds from interview start
+  endTime     Int?     // Milliseconds from interview start
+  createdAt   DateTime @default(now())
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  question  Question? @relation(fields: [questionId], references: [id])
+
+  @@map("transcripts")
+}
+
+model QuestionEvaluation {
+  id                  String           @id @default(cuid())
+  interviewId         String
+  questionId          String
+  skillId             String
+  traitEvaluation     TraitEvaluation?
+  overallScore        Int?             // 1-5
+  evidenceMapping     String?          @db.Text // JSON array of transcript references
+  summary             String?          @db.Text // Bullet points
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  question  Question  @relation(fields: [questionId], references: [id])
+  skill     Skill     @relation(fields: [skillId], references: [id])
+
+  @@unique([interviewId, questionId])
+  @@map("question_evaluations")
+}
+
+model InterviewSummary {
+  id                    String                @id @default(cuid())
+  interviewId           String                @unique
+  strengths             String[]              // Top 3 strengths
+  developmentAreas      String[]              // Top 3 development areas
+  competencySummary     String                @db.Text
+  hiringRecommendation  HiringRecommendation?
+  justification         String?               @db.Text
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@map("interview_summaries")
+}
+
+model ConsentLog {
+  id          String   @id @default(cuid())
+  interviewId String
+  ipAddress   String?
+  userAgent   String?  @db.Text
+  consentText String   @db.Text
+  agreedAt    DateTime @default(now())
+
+  @@map("consent_logs")
+}
