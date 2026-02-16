@@ -1,12 +1,13 @@
 # Base image
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
+ENV NEXT_TELEMETRY_DISABLED 1
 
 # Install dependencies only when needed
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-# OpenSSL is required for Prisma
-RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apt-get update -y && apt-get install -y openssl
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json ./
@@ -18,9 +19,15 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-ENV NEXT_TELEMETRY_DISABLED 1
+# Install OpenSSL in builder stage too
+RUN apt-get update -y && apt-get install -y openssl
+
+# Set dummy environment variables to pass build time validation
+# Real variables will be provided at runtime by Railway
+ENV OPENAI_API_KEY="dummy_key_for_build"
+ENV NEXTAUTH_SECRET="dummy_secret_for_build"
+ENV NEXTAUTH_URL="http://localhost:3000"
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 
 # Generate Prisma Client
 RUN npx prisma generate
@@ -38,12 +45,15 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Install OpenSSL in runner stage
+RUN apt-get update -y && apt-get install -y openssl ca-certificates
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy necessary files
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
